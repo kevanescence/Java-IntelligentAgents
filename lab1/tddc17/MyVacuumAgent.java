@@ -10,8 +10,8 @@ import aima.core.agent.impl.*;
 
 class MyAgentState
 {
-	public int[][] world = new int[20][20];
-	public int initialized = 0;
+	private int[][] world = new int[20][20];
+	private int initialized = 0;
 	final int UNKNOWN 	= 0;
 	final int WALL 		= 1;
 	final int CLEAR 	= 2;
@@ -58,24 +58,44 @@ class MyAgentState
 			System.out.println("");
 		}
 	}
+
+	public int getCell(int x, int y){
+		return world[x][y];
+	}
+}
+
+class Cell{
+	private Cell parent;
+	private int x,y;
+	public Cell(Cell parent,int cost, int x, int y){
+		this.parent=parent;
+		this.cost=cost;
+		this.x=x;
+		this.y=y;
+	}
+	public int getX(){
+		return this.x;
+	}
+	public int getX(){
+		return this.y;
+	}
+	public int getParent(){
+		return this.parent;
+	}
 }
 
 class MyAgentProgram implements AgentProgram {
 
 	// Here you can define your variables!
-	public int iterationCounter = 100;
-	public MyAgentState state = new MyAgentState();
- 	private int dir = 0, dir_old;
+	private int iterationCounter = 100;
+	private MyAgentState state = new MyAgentState();
 
+	int dir=0;
 	
 	@Override
 	public Action execute(Percept percept) {
-		
-		// This example agent program will update the internal agent state while only moving forward.
-		// Note! It works under the assumption that the agent starts facing to the right.
 
 	    iterationCounter--;
-	    
 	    if (iterationCounter==0)
 	    	return NoOpAction.NO_OP;
 
@@ -86,11 +106,11 @@ class MyAgentProgram implements AgentProgram {
 	   
 	    System.out.println("percept: " + p);
 	    
-	    // State update based on the percept value and the last action
-	    if (state.agent_last_action==state.ACTION_MOVE_FORWARD)
-	    {
+	    
+
+		//Update of the map
+	    if (state.agent_last_action==state.ACTION_MOVE_FORWARD){
 		int moveX=0;int moveY=0;
-		dir_old=dir;
 	 	switch(dir){
 	 		case 0:
 				moveX = 1;					
@@ -104,15 +124,12 @@ class MyAgentProgram implements AgentProgram {
 			case 3:
 				moveY = -1;
 				break;
-	    		}
-			System.out.println(state.agent_x_position + "," + state.agent_y_position);
-	    	if (!bump)
-	    	{
+	    	}
+	    	if (!bump){
 			state.agent_x_position+=moveX;
-			state.agent_y_position+=moveY;
-	    			
-	    	} else
-	    	{
+			state.agent_y_position+=moveY;	
+	    	} 
+		else{
 	    		state.updateWorld(state.agent_x_position+moveX,state.agent_y_position+moveY,state.WALL);
 	    	}
 	    }
@@ -120,20 +137,17 @@ class MyAgentProgram implements AgentProgram {
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.DIRT);
 	    else
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.CLEAR);
-	    
-	    state.printWorldDebug();
-	    
-	    
-	    // Next action selection based on the percept value
-	    if (dirt)
-	    {
-	    	System.out.println("DIRT -> choosing SUCK action!");
+	    	//Fin update of the map
+
+	    if (dirt){
+	    	System.out.println("Action:SUCK");
 	    	state.agent_last_action=state.ACTION_SUCK;
 	    	return LIUVacuumEnvironment.ACTION_SUCK;
 	    } 
+
 	    else
 	    {
-	    	if (bump)
+	    	/*if (bump)
 	    	{
 	    		state.agent_last_action=state.ACTION_TURN_RIGHT;
 	    		if(dir<3)
@@ -149,14 +163,21 @@ class MyAgentProgram implements AgentProgram {
 				state.agent_last_action=state.ACTION_TURN_RIGHT;
 		    		return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
 			}
-			else if (dir_old==1 && state.agent_last_action==state.ACTION_MOVE_FORWARD){
-				
-			}
 			else {			
 		    		state.agent_last_action=state.ACTION_MOVE_FORWARD;
 		    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
 			}
-	    	}
+	    	}*/
+		//Shortest path to unvisited cell
+		Stack<Cell> search;
+		Stack<Cell> visited;
+		search.push(new Cell(null,this.x,this.y));
+		while(state.getCell(search.get(0).getX(),search.get(0).getY())!=0 && !search.isEmpty){
+			for(int i=0;i<4;i++){
+				if(state.getCell(search.get(0).getX(),search.get(0).getY()))
+			}
+			search.pop();
+		}
 	    }
 	}
 }
@@ -165,4 +186,4 @@ public class MyVacuumAgent extends AbstractAgent {
     public MyVacuumAgent() {
     	super(new MyAgentProgram());
 	}
-}
+}(
