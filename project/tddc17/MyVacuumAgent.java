@@ -1,17 +1,24 @@
 package tddc17;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
 
 import aima.core.environment.liuvacuum.*;
+import aima.core.util.datastructure.PriorityQueue;
+import aima.core.util.datastructure.Queue;
 import aima.core.agent.Action;
 import aima.core.agent.AgentProgram;
 import aima.core.agent.Percept;
 import aima.core.agent.impl.*;
 
 class MyAgentState {
-	public int[][] world = new int[20][20];
+	public int[][] world = new int[22][22];
 	public int initialized = 0;
 	final int UNKNOWN = 0;
 	final int WALL = 1;
@@ -47,7 +54,7 @@ class MyAgentState {
 				if (world[j][i] == WALL)
 					System.out.print(" # ");
 				if (world[j][i] == CLEAR)
-					System.out.print(" . ");
+					System.out.print(" 0 ");
 				if (world[j][i] == DIRT)
 					System.out.print(" D ");
 			}
@@ -74,28 +81,16 @@ class MyAgentProgram implements AgentProgram {
 
 	// Here you can define your variables!
 	public int iterationCounter = 100;
+	private boolean end=false;
 	public MyAgentState state = new MyAgentState();
 
 	private Stack<Point> next;
 	private Direction direction;
 	
 	public MyAgentProgram() {
-		next = new Stack<>();
+		next = new Stack<Point>();
 		next.push((new Point(1,1)));
 		direction = new Direction(Direction.RIGHT);
-		
-		Point p = new Point(0,1);
-		p.setCost(3);
-		Point p2 = new Point(0,2);
-		p2.setCost(6);
-		
-		if(p.compareTo(p2) < -1) {
-			System.out.println("p < p2");
-		}
-		else {
-			System.out.println("p > p2");
-		}
-			
 	}
 
 	@Override
@@ -104,9 +99,9 @@ class MyAgentProgram implements AgentProgram {
 		// This example agent program will update the internal agent state while only moving forward.
 		// Note! It works under the assumption that the agent starts facing to the right.
 
-		iterationCounter--;
+		//iterationCounter--;
 
-		if (iterationCounter==0)
+		if (end && next.size()==1)
 			return NoOpAction.NO_OP;
 
 		DynamicPercept p = (DynamicPercept) percept;
@@ -117,48 +112,49 @@ class MyAgentProgram implements AgentProgram {
 
 		// State update based on the percept value and the last action
 		if (state.agent_last_action==state.ACTION_MOVE_FORWARD) {
+			//The robot managed to walk ?
 			if (!bump) {
-				 state.agent_x_position+=direction.getMoveOnX();
-				 state.agent_y_position+=direction.getMoveOnY();
+				 state.agent_x_position += direction.getMoveOnX();
+				 state.agent_y_position += direction.getMoveOnY();
 				 System.out.println("(x,y)" + state.agent_x_position + "," + state.agent_y_position);
 			} else {
+				//There is a wall forward
 				state.updateWorld(state.agent_x_position + direction.getMoveOnX(),
 								  state.agent_y_position + direction.getMoveOnY(),
 								  state.WALL);
 			}
 		}
-		if (dirt)
-			state.updateWorld(state.agent_x_position,state.agent_y_position,state.DIRT);
-		else
-			state.updateWorld(state.agent_x_position,state.agent_y_position,state.CLEAR);
-
-		state.printWorldDebug();
-
-
-		// Next action selection based on the percept value
+		this.state.printWorldDebug();
+		//Is there something to clean ?
 		if (dirt) {
+			state.updateWorld(state.agent_x_position,state.agent_y_position,state.DIRT);
 			System.out.println("DIRT -> choosing SUCK action!");
 			state.agent_last_action=state.ACTION_SUCK;
 			return LIUVacuumEnvironment.ACTION_SUCK;
-		} 
-		else
-		{
-			if (bump || this.state.agent_x_position==next.lastElement().getX() 
-						&& this.state.agent_y_position==next.lastElement().getY()) {
+		}
+		else {			
+			state.updateWorld(state.agent_x_position,state.agent_y_position,state.CLEAR);
+			if (bump ||    (this.state.agent_x_position == next.lastElement().getX() 
+						&& this.state.agent_y_position == next.lastElement().getY())) {
 				next.pop();
 				//state.agent_last_action=state.ACTION_NONE;
 				//return NoOpAction.NO_OP;
 			}
 			if (next.isEmpty()){
-				Stack<Point> explored=new Stack<Point>();
-				SortedSet<Point> search = new TreeSet<Point>();	    		    		
+				Stack<Point> explored = new Stack<Point>();
+				//SortedSet<Point> search = new S<Point>();
+				PointComparator comp = new PointComparator();
+				//Queue<Point> search = new PriorityQueue<Point>(10,comp);
+				List<Point> search = new LinkedList<Point>();
 				search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
-				Point top = search.last();
-				while(!search.isEmpty() && !this.state.mustVisit(top.getX(), top.getY())) {
+				Point top = search.get(0);				
+				while(!end && !search.isEmpty() && !this.state.mustVisit(top.getX(), top.getY())) {
+					
 					explored.push(top);
-					search.remove(top);
+
+					search.remove(0);
 					Point test=new Point(top.getX()+1,top.getY());
-					System.out.println(explored.contains(test));
+				
 					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 						search.add(test);
 						test.setPrevious(top);
@@ -182,86 +178,121 @@ class MyAgentProgram implements AgentProgram {
 						test.setPrevious(top);
 						test.setCost(top.getCost()+1);
 					}
-					top=search.last();
+					Collections.sort(search);
+					if(search.isEmpty()){
+						end=true;
+						search.clear();				
+						explored.clear();
+						search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
+						top = search.get(0);				
+						while(!(top.getX()==1 && top.getY()==1)) {
+							explored.push(top);
+							search.remove(0);
+							test=new Point(top.getX()+1,top.getY());
+							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								search.add(test);
+								test.setPrevious(top);
+								test.setCost(top.getCost()+1);
+							}
+							test=new Point(top.getX()-1,top.getY());
+							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								search.add(test);
+								test.setPrevious(top);
+								test.setCost(top.getCost()+1);
+							}
+							test=new Point(top.getX(),top.getY()+1);
+							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								search.add(test);
+								test.setPrevious(top);
+								test.setCost(top.getCost()+1);
+							}
+							test=new Point(top.getX(),top.getY()-1);
+							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								search.add(test);
+								test.setPrevious(top);
+								test.setCost(top.getCost()+1);
+							}
+							Collections.sort(search);
+							top=search.get(0);
+						}
+					}
+					top=search.get(0);
 				}
 				while(top.getPrevious()!=null){					
-					System.out.println("Top" + top);
 					next.push(top);
 					top=top.getPrevious();
 				}
 			}
-			if(next.lastElement().getX()-state.agent_x_position==1){
-				System.out.println("To the right !");
-				System.out.println(direction.toString());
-				if(direction.isRight()){
-					state.agent_last_action=state.ACTION_MOVE_FORWARD;					
-					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+			if(!next.isEmpty()){
+				if(next.lastElement().getX()-state.agent_x_position==1){
+					System.out.println("To the right !");
+					if(direction.isRight()){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;					
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					else if(direction.isBottom()) {
+						state.agent_last_action=state.ACTION_TURN_LEFT;
+						this.direction.turnLeft();
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					else {					
+						state.agent_last_action=state.ACTION_TURN_RIGHT;
+						this.direction.turnRight();
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
 				}
-				else if(direction.isBottom()) {
-					state.agent_last_action=state.ACTION_TURN_LEFT;
-					this.direction.turnLeft();
-					return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+				if(next.lastElement().getX()-state.agent_x_position==-1){
+					System.out.println("To the left !");
+					if(direction.isLeft()){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					else if(direction.isTop()) {
+						state.agent_last_action=state.ACTION_TURN_LEFT;
+						this.direction.turnLeft();
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					else {
+						state.agent_last_action=state.ACTION_TURN_RIGHT;
+						this.direction.turnRight();
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
 				}
-				else {					
-					state.agent_last_action=state.ACTION_TURN_RIGHT;
-					this.direction.turnRight();
-					return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+
+				if(next.lastElement().getY()-state.agent_y_position==1){
+					System.out.println("To the bottom !");
+					if(direction.isBottom()){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;					
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					else if(direction.isLeft()) {
+						state.agent_last_action=state.ACTION_TURN_LEFT;
+						this.direction.turnLeft();
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					else {
+						state.agent_last_action=state.ACTION_TURN_RIGHT;
+						this.direction.turnRight();
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
 				}
-			}
-			if(next.lastElement().getX()-state.agent_x_position==-1){
-				System.out.println("To the left !");
-				System.out.println(direction.toString());
-				if(direction.isLeft()){
-					state.agent_last_action=state.ACTION_MOVE_FORWARD;
-					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-				}
-				else if(direction.isTop()) {
-					state.agent_last_action=state.ACTION_TURN_LEFT;
-					this.direction.turnLeft();
-					return LIUVacuumEnvironment.ACTION_TURN_LEFT;
-				}
-				else {
-					state.agent_last_action=state.ACTION_TURN_RIGHT;
-					this.direction.turnRight();
-					return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
-				}
-			}
-			
-			if(next.lastElement().getY()-state.agent_y_position==1){
-				System.out.println("To the bottom !");
-				System.out.println(direction.toString());
-				if(direction.isBottom()){
-					state.agent_last_action=state.ACTION_MOVE_FORWARD;					
-					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-				}
-				else if(direction.isLeft()) {
-					state.agent_last_action=state.ACTION_TURN_LEFT;
-					this.direction.turnLeft();
-					return LIUVacuumEnvironment.ACTION_TURN_LEFT;
-				}
-				else {
-					state.agent_last_action=state.ACTION_TURN_RIGHT;
-					this.direction.turnRight();
-					return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
-				}
-			}
-			
-			if(next.lastElement().getY()-state.agent_y_position==-1){
-				System.out.println("To the top !");
-				System.out.println(direction.toString());
-				if(direction.isTop()){
-					state.agent_last_action=state.ACTION_MOVE_FORWARD;
-					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-				}
-				else if(direction.isRight()) {
-					state.agent_last_action=state.ACTION_TURN_LEFT;
-					this.direction.turnLeft();
-					return LIUVacuumEnvironment.ACTION_TURN_LEFT;
-				}
-				else {
-					state.agent_last_action=state.ACTION_TURN_RIGHT;
-					this.direction.turnRight();
-					return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+
+				if(next.lastElement().getY()-state.agent_y_position==-1){
+					System.out.println("To the top !");
+					if(direction.isTop()){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					else if(direction.isRight()) {
+						state.agent_last_action=state.ACTION_TURN_LEFT;
+						this.direction.turnLeft();
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					else {
+						state.agent_last_action=state.ACTION_TURN_RIGHT;
+						this.direction.turnRight();
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
 				}
 			}
 			
