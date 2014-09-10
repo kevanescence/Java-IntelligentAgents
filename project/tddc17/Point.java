@@ -8,16 +8,22 @@ public class Point implements Comparable<Point>{
 	
 	private Point previous;
 	private int cost;
+	private int distance;
 	
 	public Point(int x, int y) {
 		this.x = x;
 		this.y = y;
 		this.cost = 0;
+		this.distance = 0;
 		this.previous = null;
 	}
 	
 	public void setCost(int cost) {
 		this.cost = cost;
+	}
+	
+	public void setDistance(int distance){
+		this.distance = distance;
 	}
 	
 	public void setPrevious(Point previous) {
@@ -29,6 +35,10 @@ public class Point implements Comparable<Point>{
 	}
 	
 	public int getCost() {
+		return cost+distance;
+	}
+	
+	public int getPureCost() {
 		return cost;
 	}
 	

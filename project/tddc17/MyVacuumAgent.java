@@ -192,25 +192,29 @@ class MyAgentProgram implements AgentProgram {
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 								search.add(test);
 								test.setPrevious(top);
-								test.setCost(top.getCost()+1);
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
 							}
 							test=new Point(top.getX()-1,top.getY());
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 								search.add(test);
 								test.setPrevious(top);
-								test.setCost(top.getCost()+1);
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
 							}
 							test=new Point(top.getX(),top.getY()+1);
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 								search.add(test);
 								test.setPrevious(top);
-								test.setCost(top.getCost()+1);
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
 							}
 							test=new Point(top.getX(),top.getY()-1);
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 								search.add(test);
 								test.setPrevious(top);
-								test.setCost(top.getCost()+1);
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
 							}
 							Collections.sort(search);
 							top=search.get(0);
