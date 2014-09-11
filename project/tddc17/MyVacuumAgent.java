@@ -85,23 +85,58 @@ class MyAgentProgram implements AgentProgram {
 	public int iterationCounter = 100;
 	private boolean end=false;
 	public MyAgentState state = new MyAgentState();
-
 	private Stack<Point> next;
+	private Set<Point> explored;
+	private Queue<Point> search;
 	private Direction direction;
 	
 	public MyAgentProgram() {
 		next = new Stack<Point>();
-		next.push((new Point(1,1)));
+		next.push((new Point(1,1)));//		
 		direction = new Direction(Direction.RIGHT);
+		explored = new HashSet<Point>();
+		PointComparator comp = new PointComparator();		
+		search = new PriorityQueue<Point>(100,comp);
 	}
-
+	private void addSearchPoint(Point p, Point previous){
+		this.addSearchPoint(p, previous, false);
+	}
+	
+	private void addSearchPoint(Point p, Point previous, boolean aStar){
+		System.out.println(p);
+		if(!explored.contains(p)
+				&& !search.contains(p) 
+				&& !this.state.isWall(p.getX(),p.getY())){
+			
+			if(aStar){
+				p.setDistance(Math.abs(p.getX()-1)+Math.abs(p.getY()-1));
+				p.setCost(previous.getPureCost()+1);
+			}
+			else {
+				p.setCost(previous.getCost()+1);
+			}
+				
+			p.setPrevious(previous);
+			search.add(p);														
+		}
+	}
+	
+	private void addNeighbours(Point p){
+		//Square on the right		
+		Point test=new Point(p.getX()+1,p.getY());
+		this.addSearchPoint(test, p);
+		//Square on the left
+		test=new Point(p.getX()-1,p.getY());
+		this.addSearchPoint(test, p);
+		//Square above
+		test=new Point(p.getX(),p.getY()+1);
+		this.addSearchPoint(test, p);
+		//Square below
+		test=new Point(p.getX(),p.getY()-1);
+		this.addSearchPoint(test, p);
+	}
 	@Override
 	public Action execute(Percept percept) {
-
-		// This example agent program will update the internal agent state while only moving forward.
-		// Note! It works under the assumption that the agent starts facing to the right.
-
-		//iterationCounter--;
 
 		if (end && next.size()==1)
 			return NoOpAction.NO_OP;
@@ -139,111 +174,33 @@ class MyAgentProgram implements AgentProgram {
 			if (bump ||    (this.state.agent_x_position == next.lastElement().getX() 
 						&& this.state.agent_y_position == next.lastElement().getY())) {
 				next.pop();
-				//state.agent_last_action=state.ACTION_NONE;
-				//return NoOpAction.NO_OP;
 			}
 			if (next.isEmpty()){
-//				Stack<Point> explored = new Stack<Point>();
-				Set<Point> explored = new HashSet<Point>();
-				//SortedSet<Point> search = new S<Point>();
-				PointComparator comp = new PointComparator();
-				Queue<Point> search = new PriorityQueue<Point>(5000,comp);
-//				List<Point> search = new LinkedList<Point>();
+				search.clear();				
+				explored.clear();				
 				search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
-//				Point top = search.get(0);
 				Point top = search.peek();
 				while(!end && !search.isEmpty() && !this.state.mustVisit(top.getX(), top.getY())) {
-//					System.out.println("Je boule car 'ai pas trouvé la fin");
-					explored.add(top);
-							if(search.size() == 100)
-								System.out.println("Search" + search);
-//					search.remove(0);
+					explored.add(top);					
 					search.poll();
-					Point test=new Point(top.getX()+1,top.getY());
-					
-					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						test.setCost(top.getCost()+1);
-						search.add(test);						
-						test.setPrevious(top);						
-					}
-					test=new Point(top.getX()-1,top.getY());
-					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						test.setCost(top.getCost()+1);
-						search.add(test);						
-						test.setPrevious(top);
-						
-					}
-					test=new Point(top.getX(),top.getY()+1);
-					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						test.setCost(top.getCost()+1);
-						search.add(test);
-						test.setPrevious(top);
-						
-					}
-					test=new Point(top.getX(),top.getY()-1);
-					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						test.setCost(top.getCost()+1);
-						search.add(test);
-						test.setPrevious(top);						
-					}
-//					Collections.sort(search);
+					this.addNeighbours(top);
+					Point test;
 					if(search.isEmpty()){
 						end=true;
 						search.clear();				
 						explored.clear();
 						search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
-//						top = search.get(0);	
 						top = search.peek();
-						while(!(top.getX()==1 && top.getY()==1)) {
-//							System.out.println("Je boucle pour rejoindre home");
+						while(!(top.getX()==1 && top.getY()==1)) {//							
 							explored.add(top);
-							//System.err.println(search.size());
-							if(search.size() == 100)
-								System.out.println(search);
-//							search.remove(0);
 							search.poll();
-							test=new Point(top.getX()+1,top.getY());
-							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
-								search.add(test);
-								test.setPrevious(top);
-								
-							}
-							test=new Point(top.getX()-1,top.getY());
-							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
-								search.add(test);								
-								test.setPrevious(top);
-								
-							}
-							test=new Point(top.getX(),top.getY()+1);
-							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
-								search.add(test);								
-								test.setPrevious(top);
-								
-							}
-							test=new Point(top.getX(),top.getY()-1);
-							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
-								search.add(test);								
-								test.setPrevious(top);
-								
-							}
-//							Collections.sort(search);
-//							top=search.get(0);
+							this.addNeighbours(top);
 							top = search.peek();
 						}
 					}
-//					top=search.get(0);
 					top = search.peek();
 				}
-				while(top.getPrevious()!=null){	
-					//System.out.println("Find a path");
+				while(top.getPrevious()!=null){						
 					next.push(top);
 					top=top.getPrevious();
 				}
