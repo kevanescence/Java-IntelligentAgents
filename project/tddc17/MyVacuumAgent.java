@@ -2,9 +2,11 @@ package tddc17;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -141,88 +143,106 @@ class MyAgentProgram implements AgentProgram {
 				//return NoOpAction.NO_OP;
 			}
 			if (next.isEmpty()){
-				Stack<Point> explored = new Stack<Point>();
+//				Stack<Point> explored = new Stack<Point>();
+				Set<Point> explored = new HashSet<Point>();
 				//SortedSet<Point> search = new S<Point>();
 				PointComparator comp = new PointComparator();
-				//Queue<Point> search = new PriorityQueue<Point>(10,comp);
-				List<Point> search = new LinkedList<Point>();
+				Queue<Point> search = new PriorityQueue<Point>(5000,comp);
+//				List<Point> search = new LinkedList<Point>();
 				search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
-				Point top = search.get(0);				
+//				Point top = search.get(0);
+				Point top = search.peek();
 				while(!end && !search.isEmpty() && !this.state.mustVisit(top.getX(), top.getY())) {
-					
-					explored.push(top);
-
-					search.remove(0);
+//					System.out.println("Je boule car 'ai pas trouvé la fin");
+					explored.add(top);
+							if(search.size() == 100)
+								System.out.println("Search" + search);
+//					search.remove(0);
+					search.poll();
 					Point test=new Point(top.getX()+1,top.getY());
-				
+					
 					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						search.add(test);
-						test.setPrevious(top);
 						test.setCost(top.getCost()+1);
+						if(!search.contains(test))search.add(test);						
+						test.setPrevious(top);						
 					}
 					test=new Point(top.getX()-1,top.getY());
 					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						search.add(test);
-						test.setPrevious(top);
 						test.setCost(top.getCost()+1);
+						if(!search.contains(test))search.add(test);						
+						test.setPrevious(top);
+						
 					}
 					test=new Point(top.getX(),top.getY()+1);
 					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						search.add(test);
-						test.setPrevious(top);
 						test.setCost(top.getCost()+1);
+						if(!search.contains(test))search.add(test);
+						
+						test.setPrevious(top);
+						
 					}
 					test=new Point(top.getX(),top.getY()-1);
 					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-						search.add(test);
-						test.setPrevious(top);
 						test.setCost(top.getCost()+1);
+						if(!search.contains(test))search.add(test);
+						
+						test.setPrevious(top);						
 					}
-					Collections.sort(search);
+//					Collections.sort(search);
 					if(search.isEmpty()){
 						end=true;
 						search.clear();				
 						explored.clear();
 						search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
-						top = search.get(0);				
+//						top = search.get(0);	
+						top = search.peek();
 						while(!(top.getX()==1 && top.getY()==1)) {
-							explored.push(top);
-							search.remove(0);
+//							System.out.println("Je boucle pour rejoindre home");
+							explored.add(top);
+							System.err.println(search.size());
+							if(search.size() == 100)
+								System.out.println(search);
+//							search.remove(0);
+							search.poll();
 							test=new Point(top.getX()+1,top.getY());
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								search.add(test);
+								test.setCost(top.getCost()+1);
+								if(!search.contains(test))search.add(test);
+								
 								test.setPrevious(top);
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								
 							}
 							test=new Point(top.getX()-1,top.getY());
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								search.add(test);
+								test.setCost(top.getCost()+1);
+								if(!search.contains(test))search.add(test);								
 								test.setPrevious(top);
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								
 							}
 							test=new Point(top.getX(),top.getY()+1);
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								search.add(test);
+								test.setCost(top.getCost()+1);
+								if(!search.contains(test))search.add(test);								
 								test.setPrevious(top);
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								
 							}
 							test=new Point(top.getX(),top.getY()-1);
 							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								search.add(test);
+								test.setCost(top.getCost()+1);
+								if(!search.contains(test))search.add(test);								
 								test.setPrevious(top);
-								test.setCost(top.getPureCost()+1);
-								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								
 							}
-							Collections.sort(search);
-							top=search.get(0);
+//							Collections.sort(search);
+//							top=search.get(0);
+							top = search.peek();
 						}
 					}
-					top=search.get(0);
+//					top=search.get(0);
+					top = search.peek();
 				}
-				while(top.getPrevious()!=null){					
+				while(top.getPrevious()!=null){	
+					System.out.println("Iciiiii");
 					next.push(top);
 					top=top.getPrevious();
 				}
