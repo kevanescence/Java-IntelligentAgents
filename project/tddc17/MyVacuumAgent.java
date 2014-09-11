@@ -161,31 +161,29 @@ class MyAgentProgram implements AgentProgram {
 					search.poll();
 					Point test=new Point(top.getX()+1,top.getY());
 					
-					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 						test.setCost(top.getCost()+1);
-						if(!search.contains(test))search.add(test);						
+						search.add(test);						
 						test.setPrevious(top);						
 					}
 					test=new Point(top.getX()-1,top.getY());
-					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 						test.setCost(top.getCost()+1);
-						if(!search.contains(test))search.add(test);						
+						search.add(test);						
 						test.setPrevious(top);
 						
 					}
 					test=new Point(top.getX(),top.getY()+1);
-					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 						test.setCost(top.getCost()+1);
-						if(!search.contains(test))search.add(test);
-						
+						search.add(test);
 						test.setPrevious(top);
 						
 					}
 					test=new Point(top.getX(),top.getY()-1);
-					if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+					if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
 						test.setCost(top.getCost()+1);
-						if(!search.contains(test))search.add(test);
-						
+						search.add(test);
 						test.setPrevious(top);						
 					}
 //					Collections.sort(search);
@@ -199,37 +197,40 @@ class MyAgentProgram implements AgentProgram {
 						while(!(top.getX()==1 && top.getY()==1)) {
 //							System.out.println("Je boucle pour rejoindre home");
 							explored.add(top);
-							System.err.println(search.size());
+							//System.err.println(search.size());
 							if(search.size() == 100)
 								System.out.println(search);
 //							search.remove(0);
 							search.poll();
 							test=new Point(top.getX()+1,top.getY());
-							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getCost()+1);
-								if(!search.contains(test))search.add(test);
-								
+							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								search.add(test);
 								test.setPrevious(top);
 								
 							}
 							test=new Point(top.getX()-1,top.getY());
-							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getCost()+1);
-								if(!search.contains(test))search.add(test);								
+							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								search.add(test);								
 								test.setPrevious(top);
 								
 							}
 							test=new Point(top.getX(),top.getY()+1);
-							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getCost()+1);
-								if(!search.contains(test))search.add(test);								
+							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								search.add(test);								
 								test.setPrevious(top);
 								
 							}
 							test=new Point(top.getX(),top.getY()-1);
-							if(!explored.contains(test) && !this.state.isWall(test.getX(),test.getY())){
-								test.setCost(top.getCost()+1);
-								if(!search.contains(test))search.add(test);								
+							if(!explored.contains(test) && !search.contains(test) && !this.state.isWall(test.getX(),test.getY())){
+								test.setCost(top.getPureCost()+1);
+								test.setDistance(Math.abs(test.getX()-1)+Math.abs(test.getY()-1));
+								search.add(test);								
 								test.setPrevious(top);
 								
 							}
@@ -242,7 +243,7 @@ class MyAgentProgram implements AgentProgram {
 					top = search.peek();
 				}
 				while(top.getPrevious()!=null){	
-					System.out.println("Iciiiii");
+					//System.out.println("Find a path");
 					next.push(top);
 					top=top.getPrevious();
 				}
