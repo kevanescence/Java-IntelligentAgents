@@ -1,15 +1,10 @@
 package tddc17;
 
-import java.util.ArrayList;
-import java.util.Collections;
+
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.Stack;
-import java.util.TreeSet;
+
 
 import aima.core.environment.liuvacuum.*;
 import aima.core.util.datastructure.PriorityQueue;
@@ -85,25 +80,36 @@ class MyAgentProgram implements AgentProgram {
 	public int iterationCounter = 100;
 	private boolean end=false;
 	public MyAgentState state = new MyAgentState();
+	
+	
 	private Stack<Point> next;
+	//The point already explored by the search algorithm
 	private Set<Point> explored;
+	//Points to explore in the search algorithm
 	private Queue<Point> search;
+	//Current direction of the agent
 	private Direction direction;
 	
 	public MyAgentProgram() {
 		next = new Stack<Point>();
-		next.push((new Point(1,1)));//		
+		next.push((new Point(1,1)));	
 		direction = new Direction(Direction.RIGHT);
 		explored = new HashSet<Point>();
 		PointComparator comp = new PointComparator();		
 		search = new PriorityQueue<Point>(100,comp);
 	}
+	
 	private void addSearchPoint(Point p, Point previous){
 		this.addSearchPoint(p, previous, false);
 	}
 	
-	private void addSearchPoint(Point p, Point previous, boolean aStar){
-		System.out.println(p);
+	/**
+	 * Add a given point to the search queue if needed
+	 * @param p the point to add
+	 * @param previous the "parent" point of p
+	 * @param aStar true if the A* must be applied
+	 */
+	private void addSearchPoint(Point p, Point previous, boolean aStar){		
 		if(!explored.contains(p)
 				&& !search.contains(p) 
 				&& !this.state.isWall(p.getX(),p.getY())){
@@ -121,6 +127,11 @@ class MyAgentProgram implements AgentProgram {
 		}
 	}
 	
+	/**
+	 * Add all neighbours of the given point to the search list if they are not 
+	 * yet in it	 
+	 * @param p 
+	 */
 	private void addNeighbours(Point p){
 		//Square on the right		
 		Point test=new Point(p.getX()+1,p.getY());
@@ -138,22 +149,23 @@ class MyAgentProgram implements AgentProgram {
 	@Override
 	public Action execute(Percept percept) {
 
-		if (end && next.size()==1)
-			return NoOpAction.NO_OP;
+
 
 		DynamicPercept p = (DynamicPercept) percept;
 		Boolean bump = (Boolean)p.getAttribute("bump");
 		Boolean dirt = (Boolean)p.getAttribute("dirt");
 		Boolean home = (Boolean)p.getAttribute("home");
 		System.out.println("percept: " + p);
+		
+		if (end && home && next.size()==1)
+			return NoOpAction.NO_OP;
 
 		// State update based on the percept value and the last action
 		if (state.agent_last_action==state.ACTION_MOVE_FORWARD) {
 			//The robot managed to walk ?
 			if (!bump) {
 				 state.agent_x_position += direction.getMoveOnX();
-				 state.agent_y_position += direction.getMoveOnY();
-				 System.out.println("(x,y)" + state.agent_x_position + "," + state.agent_y_position);
+				 state.agent_y_position += direction.getMoveOnY();				 
 			} else {
 				//There is a wall forward
 				state.updateWorld(state.agent_x_position + direction.getMoveOnX(),
@@ -178,20 +190,26 @@ class MyAgentProgram implements AgentProgram {
 			if (next.isEmpty()){
 				search.clear();				
 				explored.clear();				
-				search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
+				search.add(new Point(this.state.agent_x_position, 
+									 this.state.agent_y_position));
 				Point top = search.peek();
-				while(!end && !search.isEmpty() && !this.state.mustVisit(top.getX(), top.getY())) {
+				
+				// Find the path to the next unvisited point
+				while(!end && !search.isEmpty() 
+						   && !this.state.mustVisit(top.getX(), top.getY())) {
 					explored.add(top);					
 					search.poll();
 					this.addNeighbours(top);
-					Point test;
 					if(search.isEmpty()){
 						end=true;
 						search.clear();				
 						explored.clear();
-						search.add(new Point(this.state.agent_x_position, this.state.agent_y_position));
+						search.add(new Point(this.state.agent_x_position,
+											 this.state.agent_y_position));
 						top = search.peek();
-						while(!(top.getX()==1 && top.getY()==1)) {//							
+						
+						//Build the path to home.
+						while(!(top.getX()==1 && top.getY()==1)) {							
 							explored.add(top);
 							search.poll();
 							this.addNeighbours(top);
@@ -200,14 +218,19 @@ class MyAgentProgram implements AgentProgram {
 					}
 					top = search.peek();
 				}
+				
+				//Add the found path to the next visited square 
 				while(top.getPrevious()!=null){						
 					next.push(top);
 					top=top.getPrevious();
 				}
 			}
+			
+			//Choose the action to do considering the square the agent
+			// has to go to.
 			if(!next.isEmpty()){
-				if(next.lastElement().getX()-state.agent_x_position==1){
-					System.out.println("To the right !");
+				//next point is at the right of the current position
+				if(next.lastElement().getX()-state.agent_x_position==1){					
 					if(direction.isRight()){
 						state.agent_last_action=state.ACTION_MOVE_FORWARD;					
 						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
@@ -223,8 +246,8 @@ class MyAgentProgram implements AgentProgram {
 						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
 					}
 				}
-				if(next.lastElement().getX()-state.agent_x_position==-1){
-					System.out.println("To the left !");
+				//next point is at the left of the current position
+				if(next.lastElement().getX()-state.agent_x_position==-1){					
 					if(direction.isLeft()){
 						state.agent_last_action=state.ACTION_MOVE_FORWARD;
 						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
@@ -240,9 +263,8 @@ class MyAgentProgram implements AgentProgram {
 						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
 					}
 				}
-
-				if(next.lastElement().getY()-state.agent_y_position==1){
-					System.out.println("To the bottom !");
+				//next point is at the bottom of the current position
+				if(next.lastElement().getY()-state.agent_y_position==1){					
 					if(direction.isBottom()){
 						state.agent_last_action=state.ACTION_MOVE_FORWARD;					
 						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
@@ -258,9 +280,8 @@ class MyAgentProgram implements AgentProgram {
 						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
 					}
 				}
-
-				if(next.lastElement().getY()-state.agent_y_position==-1){
-					System.out.println("To the top !");
+				//next point is at the top of the current position
+				if(next.lastElement().getY()-state.agent_y_position==-1){					
 					if(direction.isTop()){
 						state.agent_last_action=state.ACTION_MOVE_FORWARD;
 						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
@@ -280,7 +301,6 @@ class MyAgentProgram implements AgentProgram {
 			
 			state.agent_last_action = state.ACTION_NONE;
 			return NoOpAction.NO_OP;
-			//Deplacement
 			
 		}
 	}

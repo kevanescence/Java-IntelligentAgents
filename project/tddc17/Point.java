@@ -1,7 +1,5 @@
 package tddc17;
 
-import java.util.Comparator;
-
 public class Point implements Comparable<Point>{
 	private int x;
 	private int y;
@@ -60,7 +58,7 @@ public class Point implements Comparable<Point>{
 	
 	@Override
 	public int hashCode() {		
-		return 100*x + y;
+		return 1000*x + y;
 	}
 	
 	@Override
@@ -78,14 +76,5 @@ public class Point implements Comparable<Point>{
 			return 1;
 		return 0;
 	}
-
-
-
-//	@Override
-//	public int compare(Point arg0, Point arg1) {
-//		// TODO Stub de la méthode généré automatiquement
-//		return arg1.cost - arg0.cost;
-//	}
-	
 	
 }
